@@ -22,6 +22,13 @@ void iterHeaders(std::string_view req, Callback &&callback) {
 
         return std::string_view(first, last);
     };
+    auto to_lower = [](std::string_view str) {
+        std::string result;
+        result.resize(str.size());
+        std::transform(str.begin(), str.end(), result.begin(),
+                       [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+        return result;
+    };
 
     auto headers_start = req.find("\r\n");
     if (headers_start == std::string_view::npos)
@@ -44,14 +51,14 @@ void iterHeaders(std::string_view req, Callback &&callback) {
         std::string_view key = trim(line.substr(0, delim_pos));
         std::string_view val = trim(line.substr(delim_pos + 1));
 
-        callback(key, val);
+        callback(to_lower(key), to_lower(val));
     }
 }
 
 std::pair<std::string, std::string> findHostPort(std::string_view req) {
-    std::string_view host = "";
+    std::string host = "";
     iterHeaders(req, [&host](std::string_view key, std::string_view val) {
-        if (key == "Host")
+        if (key == "host")
             host = val;
     });
 
@@ -78,9 +85,9 @@ std::optional<size_t> findContentLength(std::string_view rsp) {
         return std::nullopt;
     };
 
-    std::string_view length = "";
+    std::string length = "";
     iterHeaders(rsp, [&length](std::string_view key, std::string_view val) {
-        if (key == "Content-Length")
+        if (key == "content-length")
             length = val;
     });
 

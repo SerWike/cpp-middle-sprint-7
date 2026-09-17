@@ -24,7 +24,7 @@ TEST(iterHeaders, SkipRequestLine) {
     ASSERT_EQ(1, count);
 
     ASSERT_EQ(1, headers.size());
-    EXPECT_EQ("Host", headers[0].first);
+    EXPECT_EQ("host", headers[0].first);
     EXPECT_EQ("example.com", headers[0].second);
 }
 
@@ -38,7 +38,7 @@ TEST(iterHeaders, SingleHeader) {
     iterHeaders(req, [&](std::string_view key, std::string_view val) { headers.emplace_back(key, val); });
 
     ASSERT_EQ(1, headers.size());
-    EXPECT_EQ("Host", headers[0].first);
+    EXPECT_EQ("host", headers[0].first);
     EXPECT_EQ("example.com", headers[0].second);
 }
 
@@ -51,25 +51,25 @@ TEST(iterHeaders, MultipleHeaders) {
                            "Content-Length: 0\r\n"
                            "\r\n";
 
-    std::vector<std::pair<std::string_view, std::string_view>> headers;
+    std::vector<std::pair<std::string, std::string>> headers;
 
     iterHeaders(req, [&](std::string_view key, std::string_view val) { headers.emplace_back(key, val); });
 
     ASSERT_EQ(5, headers.size());
 
-    EXPECT_EQ("Host", headers[0].first);
+    EXPECT_EQ("host", headers[0].first);
     EXPECT_EQ("example.com", headers[0].second);
 
-    EXPECT_EQ("User-Agent", headers[1].first);
+    EXPECT_EQ("user-agent", headers[1].first);
     EXPECT_EQ("curl/8.0", headers[1].second);
 
-    EXPECT_EQ("Accept", headers[2].first);
+    EXPECT_EQ("accept", headers[2].first);
     EXPECT_EQ("*/*", headers[2].second);
 
-    EXPECT_EQ("Content-Type", headers[3].first);
+    EXPECT_EQ("content-type", headers[3].first);
     EXPECT_EQ("application/json", headers[3].second);
 
-    EXPECT_EQ("Content-Length", headers[4].first);
+    EXPECT_EQ("content-length", headers[4].first);
     EXPECT_EQ("0", headers[4].second);
 }
 
@@ -83,30 +83,31 @@ TEST(iterHeaders, MultipleSameHeaders) {
                            "Accept: *.zip\r\n"
                            "\r\n";
 
-    std::map<std::string_view, std::string> headers;
+    std::map<std::string, std::string> headers;
 
     iterHeaders(req, [&](std::string_view key, std::string_view val) {
-        if (!headers.contains(key))
-            headers[key] = "";
-        headers[key] = headers[key] + val;
+        std::string str_key = std::string(key);
+        if (!headers.contains(str_key))
+            headers[str_key] = "";
+        headers[str_key] = headers[str_key] + val;
     });
 
     ASSERT_EQ(5, headers.size());
 
-    ASSERT_TRUE(headers.contains("Host"));
-    EXPECT_EQ("example.com", headers["Host"]);
+    ASSERT_TRUE(headers.contains("host"));
+    EXPECT_EQ("example.com", headers["host"]);
 
-    ASSERT_TRUE(headers.contains("User-Agent"));
-    EXPECT_EQ("curl/8.0", headers["User-Agent"]);
+    ASSERT_TRUE(headers.contains("user-agent"));
+    EXPECT_EQ("curl/8.0", headers["user-agent"]);
 
-    ASSERT_TRUE(headers.contains("Accept"));
-    EXPECT_EQ("*/**.zip", headers["Accept"]);
+    ASSERT_TRUE(headers.contains("accept"));
+    EXPECT_EQ("*/**.zip", headers["accept"]);
 
-    ASSERT_TRUE(headers.contains("Content-Type"));
-    EXPECT_EQ("application/json", headers["Content-Type"]);
+    ASSERT_TRUE(headers.contains("content-type"));
+    EXPECT_EQ("application/json", headers["content-type"]);
 
-    ASSERT_TRUE(headers.contains("Content-Length"));
-    EXPECT_EQ("0", headers["Content-Length"]);
+    ASSERT_TRUE(headers.contains("content-length"));
+    EXPECT_EQ("0", headers["content-length"]);
 }
 
 TEST(findHostPort, Simple) {
