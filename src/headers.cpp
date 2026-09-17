@@ -94,16 +94,31 @@ std::pair<std::string, std::string> findHostPort(std::string_view req) {
 }
 
 std::optional<size_t> findContentLength(std::string_view rsp) {
-    auto convert_to_number = [](std::string_view num) -> std::optional<size_t> {
-        if (num.empty())
+    // auto convert_to_number = [](std::string_view num) -> std::optional<size_t> {
+    //     if (num.empty())
+    //         return std::nullopt;
+
+    //     size_t value = 0;
+
+    //     auto [ptr, err] = std::from_chars(num.begin(), num.end(), value);
+    //     if (err == std::errc())
+    //         return value;
+    //     return std::nullopt;
+    // };
+
+    auto convert_to_number = [](std::string_view num) -> std::optional<std::size_t> {
+        constexpr std::size_t kMaxContentLength = 5ULL * 1024 * 1024 * 1024;  // 5Gb
+
+        if (num.empty() || num.size() > 10)
             return std::nullopt;
 
-        size_t value = 0;
-
+        std::size_t value = 0;
         auto [ptr, err] = std::from_chars(num.begin(), num.end(), value);
-        if (err == std::errc())
-            return value;
-        return std::nullopt;
+
+        if (err != std::errc() || ptr != num.end() || value > kMaxContentLength)
+            return std::nullopt;
+
+        return value;
     };
 
     std::string length = "";

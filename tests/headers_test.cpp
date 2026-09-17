@@ -199,3 +199,31 @@ TEST(findContentLength, NoContentLength) {
 
     ASSERT_FALSE(content_length.has_value());
 }
+
+TEST(findContentLength, InvalidContentLength) {
+    std::string_view req = "GET /index.html HTTP/1.1\r\n"
+                           "Host: example.com:85\r\n"
+                           "User-Agent: curl/8.0\r\n"
+                           "Accept: */*\r\n"
+                           "Content-Type: application/json\r\n"
+                           "Content-Length: invalid\r\n"
+                           "\r\n";
+
+    auto content_length = findContentLength(req);
+
+    ASSERT_FALSE(content_length.has_value());
+}
+
+TEST(findContentLength, TooLargeContentLength) {
+    std::string_view req = "GET /index.html HTTP/1.1\r\n"
+                           "Host: example.com:85\r\n"
+                           "User-Agent: curl/8.0\r\n"
+                           "Accept: */*\r\n"
+                           "Content-Type: application/json\r\n"
+                           "Content-Length: 999999999999999999999\r\n"
+                           "\r\n";
+
+    auto content_length = findContentLength(req);
+
+    ASSERT_FALSE(content_length.has_value());
+}
