@@ -1,6 +1,7 @@
 #include "headers.h"
 
 #include <algorithm>
+#include <format>
 #include <ranges>
 #include <string_view>
 #include <utility>
@@ -55,6 +56,22 @@ void iterHeaders(std::string_view req, Callback &&callback) {
     }
 }
 
+bool checkPort(std::string_view port) {
+    if (port.empty())
+        return false;
+
+    std::uint32_t value = 0;
+    auto [ptr, ec] = std::from_chars(port.begin(), port.end(), value);
+
+    if (ec != std::errc() || ptr != port.end())
+        return false;
+
+    if (value < 1 || value > 65535)
+        return false;
+
+    return true;
+}
+
 std::pair<std::string, std::string> findHostPort(std::string_view req) {
     std::string host = "";
     iterHeaders(req, [&host](std::string_view key, std::string_view val) {
@@ -69,7 +86,11 @@ std::pair<std::string, std::string> findHostPort(std::string_view req) {
     if (delim == std::string_view::npos)
         return std::make_pair(std::string(host), "80");
 
-    return std::make_pair(std::string(host.substr(0, delim)), std::string(host.substr(delim + 1)));
+    auto port_str = host.substr(delim + 1);
+    if (!checkPort(port_str))
+        throw std::runtime_error(std::format("Invalid port: {}", port_str));
+
+    return std::make_pair(std::string(host.substr(0, delim)), port_str);
 }
 
 std::optional<size_t> findContentLength(std::string_view rsp) {

@@ -136,6 +136,42 @@ TEST(findHostPort, NoHost) {
     ASSERT_THROW(host_and_port = findHostPort(req), std::runtime_error);
 }
 
+TEST(findHostPort, InvalidPort) {
+    std::string_view req = "GET /index.html HTTP/1.1\r\n"
+                           "Host: example.com:port\r\n"
+                           "User-Agent: curl/8.0\r\n"
+                           "Accept: */*\r\n"
+                           "Content-Type: application/json\r\n"
+                           "Content-Length: 0\r\n"
+                           "\r\n";
+    std::pair<std::string, std::string> host_and_port;
+    ASSERT_THROW(host_and_port = findHostPort(req), std::runtime_error);
+}
+
+TEST(findHostPort, PortMoreMax) {
+    std::string_view req = "GET /index.html HTTP/1.1\r\n"
+                           "Host: example.com:99999\r\n"
+                           "User-Agent: curl/8.0\r\n"
+                           "Accept: */*\r\n"
+                           "Content-Type: application/json\r\n"
+                           "Content-Length: 0\r\n"
+                           "\r\n";
+    std::pair<std::string, std::string> host_and_port;
+    ASSERT_THROW(host_and_port = findHostPort(req), std::runtime_error);
+}
+
+TEST(findHostPort, ZeroPort) {
+    std::string_view req = "GET /index.html HTTP/1.1\r\n"
+                           "Host: example.com:99999\r\n"
+                           "User-Agent: curl/8.0\r\n"
+                           "Accept: */*\r\n"
+                           "Content-Type: application/json\r\n"
+                           "Content-Length: 0\r\n"
+                           "\r\n";
+    std::pair<std::string, std::string> host_and_port;
+    ASSERT_THROW(host_and_port = findHostPort(req), std::runtime_error);
+}
+
 TEST(findContentLength, Simple) {
     std::string_view req = "GET /index.html HTTP/1.1\r\n"
                            "Host: example.com:85\r\n"
