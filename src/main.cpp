@@ -26,6 +26,8 @@ using boost::asio::ip::tcp;
 using boost::system::error_code;
 
 constexpr std::string_view delimiter = "\r\n\r\n";
+// This size is only for test, in real it should be more
+constexpr size_t max_chunk_size = 2048;
 
 struct SocketGuard {
     tcp::socket &_sock;
@@ -55,7 +57,7 @@ awaitable<void> session(tcp::socket client_socket, io_service &io_service) {
 
     boost::asio::streambuf buf;
     unsigned long bytes_ready, sended_bytes, total_size;
-    size_t headers_size = 0;
+    size_t headers_size = 0, chunk_size = 0;
 
     std::string req, resp;
     std::optional<size_t> content_length;
@@ -76,7 +78,7 @@ awaitable<void> session(tcp::socket client_socket, io_service &io_service) {
         SocketGuard dest(dest_socket);
 
         co_await async_connect(dest._sock, endpoints, use_awaitable);
-        int a;
+
         co_await async_write(dest._sock, buffer(req), use_awaitable);
 
         bytes_ready = co_await async_read_until(dest._sock, buf, delimiter, use_awaitable);
@@ -98,10 +100,15 @@ awaitable<void> session(tcp::socket client_socket, io_service &io_service) {
                 need -= already;
             }
 
-            if (need > 0) {
-                bytes_ready = co_await async_read(dest._sock, buf, transfer_exactly(need), use_awaitable);
+            while (need > 0) {
+                chunk_size = std::min(need, max_chunk_size);
+
+                bytes_ready = co_await async_read(dest._sock, buf, transfer_exactly(chunk_size), use_awaitable);
                 buffer_to_string(buf, bytes_ready, body);
+
                 co_await async_write(client._sock, buffer(body), use_awaitable);
+
+                need -= bytes_ready;
             }
         }
 
